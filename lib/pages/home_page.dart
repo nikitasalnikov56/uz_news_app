@@ -5,13 +5,47 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lesson6/bloc/news_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+enum PopUpItem { ru, uz, en }
+
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    PopUpItem? item;
     return Scaffold(
       appBar: AppBar(
+        leading: PopupMenuButton(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          icon: const Icon(Icons.language),
+          initialValue: item,
+          onSelected: (value) {
+            item = value;
+            if (item == PopUpItem.ru) {
+              context.read<NewsBloc>().add(NewsLoadRuEvent());
+            } else if (item == PopUpItem.uz) {
+              context.read<NewsBloc>().add(NewsLoadUzEvent());
+            } else {
+              context.read<NewsBloc>().add(NewsLoadEnEvent());
+            }
+          },
+          itemBuilder: (context) => <PopupMenuEntry<PopUpItem>>[
+            const PopupMenuItem<PopUpItem>(
+              value: PopUpItem.ru,
+              child: Text('RU'),
+            ),
+            const PopupMenuItem<PopUpItem>(
+              value: PopUpItem.uz,
+              child: Text('UZ'),
+            ),
+            const PopupMenuItem<PopUpItem>(
+              value: PopUpItem.en,
+              child: Text('EN'),
+            ),
+          ],
+        ),
         title: const Text('News Study App'),
         centerTitle: true,
       ),
@@ -36,6 +70,25 @@ class NewsBodyWidget extends StatelessWidget {
           final item = state.newsFeed?.items;
           return Column(
             children: [
+              //  const Padding(
+              //     padding:  EdgeInsets.symmetric(horizontal: 14.0),
+              //     child: PhysicalModel(
+              //       color: Colors.black,
+              //       elevation: 2,
+              //       shadowColor: Colors.black,
+              //       borderRadius: const BorderRadius.all(Radius.circular(20)),
+              //       child: TextField(
+              //         decoration:  InputDecoration(
+              //           border: OutlineInputBorder(
+              //             borderSide: BorderSide.none,
+              //             borderRadius: BorderRadius.all(Radius.circular(20)),
+              //           ),
+              //           fillColor: Colors.white,
+              //           filled: true,
+              //         ),
+              //       ),
+              //     ),
+              //   ),
               SizedBox(
                 height: 250,
                 child: CarouselSlider.builder(
@@ -47,32 +100,71 @@ class NewsBodyWidget extends StatelessWidget {
                   options: CarouselOptions(
                     enlargeCenterPage: true,
                     autoPlay: true,
-
                     scrollDirection: Axis.horizontal,
                   ),
                 ),
               ),
               Expanded(
                   child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemBuilder: (context, i) {
-                  final desc = item?[i].description?.replaceAll('<p>', '');
-                  return Card(
-                    color:
-                        i % 2 == 0 ? Colors.deepPurple[200] : Colors.grey[300],
-                    child: ListTile(
-                      onTap: () async {
-                        final Uri url = Uri.parse('${item?[i].link}');
-                        try {
-                          await launchUrl(url);
-                        } catch (e) {
-                          throw 'Could\'t launch $url';
-                        }
-                      },
-                      title: Text(
-                        '${item?[i].title}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                  // final desc = item?[i]
+                  //     .description
+                  //     ?.replaceAll('&laquo;', '')
+                  //     .replaceAll('<p>', '')
+                  //     .replaceAll('&raquo;', '');
+                  return GestureDetector(
+                    onTap: () async {
+                      final Uri url = Uri.parse('${item?[i].link}');
+                      try {
+                        await launchUrl(url);
+                      } catch (e) {
+                        throw 'Could\'t launch $url';
+                      }
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color(0xFF7CE495),
+                            Color(0xFFCFF4D2),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                      subtitle: Text('$desc'),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                bottomLeft: Radius.circular(20)),
+                            child: CachedNetworkImage(
+                              imageUrl: '${item?[i].enclosure?.url}',
+                              fit: BoxFit.cover,
+                              width: 120,
+                              height: 130,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 185),
+                            child: Text(
+                              '${item?[i].title}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF215273),
+                                height: 25 / 16,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ],
+
+                        // subtitle: Text('$desc'),
+                      ),
                     ),
                   );
                 },
